@@ -12,13 +12,11 @@ const state = {
     results: null,
     history: [],
     settings: {
-        apiKey: '',
-        model: 'MiniMax-M2.1',
         categories: {
             security: true,
             performance: true,
             codeQuality: true,
-            minimaxSpecific: true
+            apiSpecific: true
         }
     }
 };
@@ -27,82 +25,59 @@ const state = {
 // Sample Code Examples
 // ===============================================
 const sampleCodes = {
-    javascript: `// ❌ BAD - Keine Error Handling
-const callMinimaxAPI = async (messages) => {
-  const response = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer YOUR_API_KEY_HERE'
-    },
-    body: JSON.stringify({
-      model: 'MiniMax-M2.1',
-      messages: messages
-    })
-  });
+    javascript: `// Express API mit typischen Problemen
+const express = require('express');
+const app = express();
+
+const API_KEY = "sk-abc123456789secretkey000";
+
+app.post('/api/users', (req, res) => {
+  const html = '<div>' + req.body.name + '</div>';
+  res.send(html);
+});
+
+async function fetchData(url) {
+  const response = await fetch(url);
   return response.json();
 }
 
-// Usage with hardcoded API key
-const messages = [{role: 'user', content: 'Hallo'}];
-callMinimaxAPI(messages);
-
-// ❌ BAD - Kein Retry Logic
-async function processMessages(msgs) {
-  for (const msg of msgs) {
-    await callMinimaxAPI(msg);
-  }
-}
-
-// ❌ BAD - Kein Rate Limiting
 for (let i = 0; i < 100; i++) {
-  callMinimaxAPI(createMessage(i));
-}`,
-    typescript: `// ❌ BAD - Fehlende Typisierung
-interface Message {
-  role: string;
-  content: string;
+  await fetchData('https://api.example.com/data/' + i);
 }
 
-const callAPI = async (messages: any[]) => {
-  const response = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer YOUR_API_KEY'
-    },
-    body: JSON.stringify({ model: 'MiniMax-M2.1', messages })
-  });
-  return response.json();
+app.listen(3000);`,
+    typescript: `// TypeScript Service mit Problemen
+interface User {
+  name: string;
+  email: string;
 }
 
-// ❌ BAD - Any Type usage
-const data: any = await callAPI([]);
-console.log(data.result.content);`,
-    python: `# ❌ BAD - Keine Error Handling
-import requests
+const SECRET = "mysupersecretapikey12345678";
 
-API_KEY = "YOUR_API_KEY_HERE"  # Hardcoded secret!
+const getUser = async (id: any) => {
+  const response = await fetch('https://api.example.com/users/' + id);
+  const data: any = await response.json();
+  return data;
+}
 
-def call_minimax(messages):
-    response = requests.post(
-        "https://api.minimax.chat/v1/text/chatcompletion_v2",
-        headers={
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={"model": "MiniMax-M2.1", "messages": messages}
+const processUsers = async (idconst processUsers = async (idconst processUsers = asyncer(const pr
+}}}}}}}}}}}}}}}}}= }}}}}}}}}}}}}}}}}= }}}}}}}}}}}}}}}}}= }}}}}}}}}}}}}}}}}= }}}}}}}}}}}sc}}}}}}}}}}}}}}}}}= }}}}}}}}ts}}}}}}}}}}}}}}}}}= }}}}}}}}}}}}}}}}}= }}}}}}}}}}}}}}}
+dedededededededededededededededededequests.get(
+        url,
+        headers={"Authorization": f"Bearer {API_KEY}"}
     )
     return response.json()
 
-# ❌ BAD - Kein Retry Logic
-def process_batch(messages):
+def process_batch(urls):
     results = []
-    for msg in messages:
-        result = call_minimax(msg)
+    for url in urls:
+        result = get_data(url)
         results.append(result)
-    return results`,
-    go: `// ❌ BAD - Keine Error Handling
+    return results
+
+for i in range(100):
+    get_data(f'https://api.example.com/item/{i}')`,
+    go: `// Go HTTP Client mit Problemen
 package main
 
 import (
@@ -111,17 +86,11 @@ import (
     "io/ioutil"
 )
 
-const API_KEY = "YOUR_API_KEY_HERE" // Hardcoded!
+const API_KEY = "sk-production-key-1234567890"
 
-func callMinimax(messages []map[string]string) {
-    jsonData := fmt.Sprintf(\`{"model": "MiniMax-M2.1", "messages": %v}\`, messages)
-    resp, _ := http.Post(
-        "https://api.minimax.chat/v1/text/chatcompletion_v2",
-        "application/json",
-        strings.NewReader(jsonData))
-    defer resp.Body.Close()
-    body, _ := ioutil.ReadAll(resp.Body)
-    fmt.Println(string(body))
+func getData(ufunc getData(ufunc getData(ufunc getData(ufu  dfunc getData(ufunc getData(ufunc g :=func getData(ufunc getData(ufunc getData(ufunc getData(ufu  dfunc gecessBatch(urls []string) {
+    for _, url := r    for _, ur       getData(url)
+    }
 }`
 };
 
@@ -195,7 +164,7 @@ const reviewRules = {
             severity: 'medium',
             title: 'Magic Numbers',
             description: 'Harckodierte Zahlen ohne Erklärung machen den Code schwer verständlich.',
-            pattern: /(?<![0-9])[0-9]{2,}(?![0-9])/g,
+            pattern: /(?:^|\s|=)\s*(\d{4,})(?!\s*[;,)\]])/gm,
             suggestion: 'Ersetzen Sie Magic Numbers durch benannte Konstanten.'
         },
         {
@@ -207,7 +176,7 @@ const reviewRules = {
             suggestion: 'Fügen Sie JSDoc/Docstring Kommentare hinzu.'
         }
     ],
-    minimaxSpecific: [
+    apiSpecific: [
         {
             id: 'MINI-001',
             severity: 'high',
@@ -359,14 +328,14 @@ function analyzeCode(code, language) {
     }
 
     // Minimax Specific Analysis
-    if (state.settings.categories.minimaxSpecific) {
-        reviewRules.minimaxSpecific.forEach(rule => {
+    if (state.settings.categories.apiSpecific) {
+        reviewRules.apiSpecific.forEach(rule => {
             const matches = code.match(rule.pattern);
             if (matches) {
                 issues.push({
                     ...rule,
                     matches: matches.slice(0, 3),
-                    category: 'minimaxSpecific'
+                    category: 'apiSpecific'
                 });
             }
         });
@@ -806,24 +775,20 @@ function setupEventListeners() {
 
     // Settings modal
     document.getElementById('settingsBtn').addEventListener('click', () => {
-        document.getElementById('apiKeyInput').value = state.settings.apiKey;
-        document.getElementById('modelSelect').value = state.settings.model;
         document.getElementById('checkSecurity').checked = state.settings.categories.security;
         document.getElementById('checkPerformance').checked = state.settings.categories.performance;
         document.getElementById('checkCodeQuality').checked = state.settings.categories.codeQuality;
-        document.getElementById('checkMinimaxSpecific').checked = state.settings.categories.minimaxSpecific;
+        document.getElementById('checkApiSpecific').checked = state.settings.categories.apiSpecific;
         openModal('settingsModal');
     });
 
     document.getElementById('closeSettingsBtn').addEventListener('click', () => closeModal('settingsModal'));
     document.getElementById('cancelSettingsBtn').addEventListener('click', () => closeModal('settingsModal'));
     document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-        state.settings.apiKey = document.getElementById('apiKeyInput').value;
-        state.settings.model = document.getElementById('modelSelect').value;
         state.settings.categories.security = document.getElementById('checkSecurity').checked;
         state.settings.categories.performance = document.getElementById('checkPerformance').checked;
         state.settings.categories.codeQuality = document.getElementById('checkCodeQuality').checked;
-        state.settings.categories.minimaxSpecific = document.getElementById('checkMinimaxSpecific').checked;
+        state.settings.categories.apiSpecific = document.getElementById('checkApiSpecific').checked;
         localStorage.setItem('mcra_settings', JSON.stringify(state.settings));
         closeModal('settingsModal');
         showToast('Einstellungen gespeichert.', 'success');
