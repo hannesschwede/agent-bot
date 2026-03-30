@@ -1,180 +1,132 @@
-// app/api/review/route.ts
-// Gemini Flash Code Reviewer — Serverless Route
-// Env var required: GEMINI_API_KEY
-
 import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenAI, Type } from "@google/genai";
 
-// ===============================================
-// Rate Limiting (in-memory, per Vercel instance)
-// For production: replace with Upstash Redis
-// ===============================================
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-const RATE_LIMIT = 5;          // max requests
-const RATE_WINDOW_MS = 60 * 60 * 1000; // per hour
-
-function getRateLimitKey(req: NextRequest): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
-  return ip;
-}
-
-function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return { allowed: true, remaining: RATE_LIMIT - 1 };
-  }
-
-  if (entry.count >= RATE_LIMIT) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  entry.count++;
-  return { allowed: true, remaining: RATE_LIMIT - entry.count };
-}
-
-// ===============================================
-// Gemini Flash API Call
-// ===============================================
-async function callGemini(code: string, language: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY not set");
-
-  const prompt = buildPrompt(code, language);
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 2048,
-          responseMimeType: "application/json",
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${err}`);
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Empty response from Gemini");
-  return text;
-}
-
-// ===============================================
-// Prompt Engineering
-// ===============================================
-function buildPrompt(code: string, language: string): string {
-  return `You are a senior ${language} developer doing a thorough code review.
-
-Analyze the following ${language} code and return a JSON object with this exact structure:
-
-{
-  "score": <number 0-100, overall code quality score>,
-  "summary": "<one sentence summary of the code quality>",
-  "issues": [
-    {
-      "id": "<e.g. SEC-001>",
-      "category": "<security|performance|codeQuality|bestPractices>",
-      "severity": "<critical|high|medium|low>",
-      "title": "<short title in German>",
-      "description": "<explanation in German, 1-2 sentences>",
-      "lineHint": "<relevant code snippet, max 60 chars>",
-      "suggestion": "<concrete fix recommendation in German>"
-    }
-  ],
-  "optimizedCode": "<the full improved version of the code with all issues fixed, as a string>"
-}
-
-Rules:
-- Return ONLY valid JSON, no markdown, no backticks, no preamble
-- issues array must be sorted: critical first, then high, medium, low
-- optimizedCode must be the actual fixed code, not a placeholder
-- Be specific — reference actual variable names, line patterns from the code
-- Max 10 issues total, only report real problems
-- If code is clean, return empty issues array and high score
-- All text fields (title, description, suggestion) must be in German
-
-Code to review (${language}):
-\`\`\`${language}
-${code.slice(0, 6000)}
-\`\`\``;
-}
-
-// ===============================================
-// Route Handler
-// ===============================================
+// POST /api/review — AI Code Review via Gemini
 export async function POST(req: NextRequest) {
-  // Rate limiting
-  const key = getRateLimitKey(req);
-  const { allowed, remaining } = checkRateLimit(key);
-
-  if (!allowed) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     return NextResponse.json(
-      { error: "Rate limit erreicht. Bitte in einer Stunde erneut versuchen." },
-      {
-        status: 429,
-        headers: { "X-RateLimit-Remaining": "0" },
-      }
+      { error: "GEMINI_API_KEY nicht konfiguriert." },
+      { status: 500 }
     );
   }
 
-  // Parse body
-  let body: { code: string; language: string };
+  let body: { code?: string; language?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Ungültiger Request Body" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Ungültiger JSON-Body." },
+      { status: 400 }
+    );
   }
 
   const { code, language } = body;
 
-  if (!code || typeof code !== "string" || code.trim().length < 10) {
-    return NextResponse.json({ error: "Kein Code übergeben" }, { status: 400 });
-  }
-
-  if (!["javascript", "typescript", "python", "go"].includes(language)) {
-    return NextResponse.json({ error: "Sprache nicht unterstützt" }, { status: 400 });
-  }
-
-  // Code length guard (protect token usage)
-  if (code.length > 8000) {
+  if (!code || !code.trim()) {
     return NextResponse.json(
-      { error: "Code zu lang. Bitte max. 8.000 Zeichen einreichen." },
-      { status: 413 }
+      { error: "Code ist erforderlich." },
+      { status: 400 }
     );
   }
 
-  // Call Gemini
   try {
-    const raw = await callGemini(code, language);
-    const result = JSON.parse(raw);
+    const genAI = new GoogleGenAI({ apiKey });
 
-    return NextResponse.json(result, {
-      headers: {
-        "X-RateLimit-Remaining": String(remaining),
+    const prompt = `Analysiere den folgenden ${language || "Code"} und gib ein strukturiertes Review in deutscher Sprache zurück.
+
+Fokussiere dich auf:
+1. Best Practices
+2. Sicherheit
+3. Performance
+4. Lesbarkeit
+
+Code:
+${code}`;
+
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            summary: {
+              type: Type.STRING,
+              description: "Kurze Zusammenfassung des Reviews",
+            },
+            issues: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  type: {
+                    type: Type.STRING,
+                    description:
+                      "Kategorie (z.B. Sicherheit, Performance, Best Practice, Lesbarkeit)",
+                  },
+                  severity: {
+                    type: Type.STRING,
+                    description: "Schweregrad: Niedrig, Mittel oder Hoch",
+                  },
+                  description: {
+                    type: Type.STRING,
+                    description: "Detaillierte Beschreibung des Problems",
+                  },
+                  suggestion: {
+                    type: Type.STRING,
+                    description: "Konkreter Verbesserungsvorschlag",
+                  },
+                },
+                required: ["type", "severity", "description", "suggestion"],
+              },
+            },
+            score: {
+              type: Type.NUMBER,
+              description: "Gesamtbewertung von 0 bis 100",
+            },
+          },
+          required: ["summary", "issues", "score"],
+        },
       },
     });
-  } catch (err) {
-    console.error("Review error:", err);
+
+    const text = response.text;
+    if (!text) {
+      return NextResponse.json(
+        { error: "Leere Antwort von Gemini." },
+        { status: 502 }
+      );
+    }
+
+    const reviewData = JSON.parse(text);
+
+    return NextResponse.json({
+      ...reviewData,
+      model: "gemini-2.0-flash",
+    });
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Unbekannter Fehler";
+
+    console.error("Gemini API Error:", error);
+
     return NextResponse.json(
-      { error: "Analyse fehlgeschlagen. Bitte erneut versuchen." },
+      {
+        error: "Analyse fehlgeschlagen.",
+        details: message,
+      },
       { status: 500 }
     );
   }
 }
 
+// Health check
 export async function GET() {
-  return NextResponse.json({ status: "ok", model: "gemini-2.0-flash" });
+  return NextResponse.json({
+    status: "ok",
+    model: "gemini-2.0-flash",
+    endpoint: "/api/review",
+  });
 }
