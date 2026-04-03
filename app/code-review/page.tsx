@@ -632,7 +632,7 @@ export default function CodeReviewerTool() {
                 letterSpacing: "0.05em",
               }}
             >
-              Powered by xAI · Grok 3 Mini · 10 Analysen/Stunde
+              Powered by xAI · Grok 3 Mini Beta · 10 Analysen/Stunde
             </p>
           </div>
         </div>
