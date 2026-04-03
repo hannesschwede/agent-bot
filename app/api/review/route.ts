@@ -1,11 +1,9 @@
 // app/api/review/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
-// In-memory rate limiting (resets on cold start — fine for Vercel Edge)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-const RATE_LIMIT = 10; // requests per window
-const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
+const RATE_LIMIT = 10;
+const RATE_WINDOW = 60 * 60 * 1000;
 
 function getRateLimit(ip: string): { allowed: boolean; remaining: number } {
   const now = Date.now();
@@ -53,7 +51,6 @@ Regeln:
 - Antworte auf Deutsch`;
 
 export async function POST(req: NextRequest) {
-  // Get IP for rate limiting
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
@@ -64,10 +61,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) {
     return NextResponse.json(
       { error: "Rate limit erreicht. Bitte in einer Stunde erneut versuchen." },
-      {
-        status: 429,
-        headers: { "X-RateLimit-Remaining": "0" },
-      }
+      { status: 429, headers: { "X-RateLimit-Remaining": "0" } }
     );
   }
 
@@ -85,28 +79,29 @@ export async function POST(req: NextRequest) {
   }
 
   if (code.length > 50000) {
-    return NextResponse.json(
-      { error: "Code zu lang. Maximal 50.000 Zeichen." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Code zu lang. Maximal 50.000 Zeichen." }, { status: 400 });
   }
 
-  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-  if (!GITHUB_TOKEN) {
+  const VERCEL_AI_GATEWAY_KEY = process.env.VERCEL_AI_GATEWAY_KEY;
+  const XAI_API_KEY = process.env.XAI_API_KEY;
+
+  if (!VERCEL_AI_GATEWAY_KEY || !XAI_API_KEY) {
     return NextResponse.json({ error: "API nicht konfiguriert." }, { status: 500 });
   }
 
   try {
-    const groqResponse = await fetch(
-      "https://models.inference.ai.azure.com/chat/completions",
+    const response = await fetch(
+      "https://ai-gateway.vercel.sh/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          Authorization: `Bearer ${VERCEL_AI_GATEWAY_KEY}`,
+          "x-ai-provider-key": XAI_API_KEY,
+          "x-ai-provider": "xai",
         },
         body: JSON.stringify({
-          model: "meta-llama-3.3-70b-instruct",
+          model: "grok-3-mini",
           max_tokens: 4096,
           temperature: 0.2,
           messages: [
@@ -120,19 +115,18 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    if (!groqResponse.ok) {
-      const err = await groqResponse.text();
-      console.error("GitHub Models error:", groqResponse.status, err);
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("Vercel AI Gateway error:", response.status, err);
       return NextResponse.json(
         { error: "AI-Analyse fehlgeschlagen. Bitte erneut versuchen." },
         { status: 502 }
       );
     }
 
-    const groqData = await groqResponse.json();
-    const rawContent = groqData.choices?.[0]?.message?.content ?? "";
+    const data = await response.json();
+    const rawContent = data.choices?.[0]?.message?.content ?? "";
 
-    // Strip potential markdown fences
     const cleaned = rawContent
       .replace(/^```(?:json)?\n?/i, "")
       .replace(/\n?```$/i, "")
@@ -142,7 +136,7 @@ export async function POST(req: NextRequest) {
     try {
       parsed = JSON.parse(cleaned);
     } catch {
-      console.error("JSON parse failed:", cleaned.substring(0, 200));
+      console.error("JSON parse failed:", cleaned.substring(0, 300));
       return NextResponse.json(
         { error: "Antwort konnte nicht verarbeitet werden. Bitte erneut versuchen." },
         { status: 500 }
