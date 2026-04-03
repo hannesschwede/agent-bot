@@ -364,6 +364,7 @@ export default function CodeReviewerTool() {
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;700;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         textarea { resize: none; font-family: 'IBM Plex Mono', monospace; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,79,21,0.4); border-radius: 2px; }
@@ -371,6 +372,11 @@ export default function CodeReviewerTool() {
         .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .tab-btn:hover { color: #fff !important; }
         .filter-btn:hover { border-color: rgba(255,79,21,0.5) !important; }
+        @media (max-width: 768px) {
+          .main-grid { grid-template-columns: 1fr !important; height: auto !important; }
+          .main-grid > div:first-child { min-height: 50vh; }
+          .main-grid > div:last-child { min-height: 50vh; border-top: 1px solid rgba(255,255,255,0.06); }
+        }
       `}</style>
 
       {/* Nav */}
@@ -445,6 +451,7 @@ export default function CodeReviewerTool() {
 
       {/* Main Layout */}
       <div
+        className="main-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
@@ -610,7 +617,6 @@ export default function CodeReviewerTool() {
                       animation: "spin 0.8s linear infinite",
                     }}
                   />
-                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   ANALYSIERE...
                 </>
               ) : (
@@ -626,7 +632,7 @@ export default function CodeReviewerTool() {
                 letterSpacing: "0.05em",
               }}
             >
-              Powered by Groq · Llama 4 · 10 Analysen/Stunde
+              Powered by xAI · Grok 3 Mini · 10 Analysen/Stunde
             </p>
           </div>
         </div>
@@ -698,7 +704,7 @@ export default function CodeReviewerTool() {
                   letterSpacing: "0.2em",
                 }}
               >
-                ANALYSIERE MIT LLAMA 4...
+                ANALYSIERE MIT GROK 3...
               </p>
             </div>
           )}

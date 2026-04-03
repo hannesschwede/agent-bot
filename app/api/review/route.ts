@@ -5,8 +5,23 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
 const RATE_WINDOW = 60 * 60 * 1000;
 
+function cleanupExpiredEntries() {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetAt) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}
+
 function getRateLimit(ip: string): { allowed: boolean; remaining: number } {
   const now = Date.now();
+
+  // Cleanup expired entries periodically to prevent memory leak
+  if (rateLimitMap.size > 100) {
+    cleanupExpiredEntries();
+  }
+
   const entry = rateLimitMap.get(ip);
 
   if (!entry || now > entry.resetAt) {
@@ -143,7 +158,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(parsed, {
+    // Validate expected response structure
+    if (
+      typeof parsed.score !== "number" ||
+      typeof parsed.summary !== "string" ||
+      !Array.isArray(parsed.issues)
+    ) {
+      console.error("Invalid response structure:", JSON.stringify(parsed).substring(0, 300));
+      return NextResponse.json(
+        { error: "Ungültige AI-Antwort. Bitte erneut versuchen." },
+        { status: 500 }
+      );
+    }
+
+    const validated = {
+      score: Math.max(0, Math.min(100, Math.round(parsed.score))),
+      summary: parsed.summary,
+      issues: parsed.issues.slice(0, 10),
+      optimizedCode: typeof parsed.optimizedCode === "string" ? parsed.optimizedCode : "",
+    };
+
+    return NextResponse.json(validated, {
       headers: { "X-RateLimit-Remaining": String(remaining) },
     });
   } catch (error) {
