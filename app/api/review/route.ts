@@ -1,30 +1,18 @@
 // app/api/review/route.ts
-// Gemini Flash Code Reviewer — Serverless Route
-// Env var required: GEMINI_API_KEY
-
 import { NextRequest, NextResponse } from "next/server";
 
-// ===============================================
-// Rate Limiting (in-memory, per Vercel instance)
-// For production: replace with Upstash Redis
-// ===============================================
+// In-memory rate limiting (resets on cold start — fine for Vercel Edge)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-const RATE_LIMIT = 5;          // max requests
-const RATE_WINDOW_MS = 60 * 60 * 1000; // per hour
+const RATE_LIMIT = 10; // requests per window
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
 
-function getRateLimitKey(req: NextRequest): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
-  return ip;
-}
-
-function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
+function getRateLimit(ip: string): { allowed: boolean; remaining: number } {
   const now = Date.now();
-  const entry = rateLimitMap.get(key);
+  const entry = rateLimitMap.get(ip);
 
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
     return { allowed: true, remaining: RATE_LIMIT - 1 };
   }
 
@@ -36,89 +24,42 @@ function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
   return { allowed: true, remaining: RATE_LIMIT - entry.count };
 }
 
-// ===============================================
-// Gemini Flash API Call
-// ===============================================
-async function callGemini(code: string, language: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY not set");
+const SYSTEM_PROMPT = `Du bist ein erfahrener Code-Reviewer. Analysiere den gegebenen Code und gib strukturiertes Feedback zurück.
 
-  const prompt = buildPrompt(code, language);
+Antworte NUR mit validem JSON — kein Markdown, keine Backticks, kein Text davor oder danach.
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 2048,
-          responseMimeType: "application/json",
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${err}`);
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Empty response from Gemini");
-  return text;
-}
-
-// ===============================================
-// Prompt Engineering
-// ===============================================
-function buildPrompt(code: string, language: string): string {
-  return `You are a senior ${language} developer doing a thorough code review.
-
-Analyze the following ${language} code and return a JSON object with this exact structure:
-
+JSON-Format:
 {
-  "score": <number 0-100, overall code quality score>,
-  "summary": "<one sentence summary of the code quality>",
+  "score": <0-100, Gesamtqualität>,
+  "summary": "<kurze 1-2 Satz Zusammenfassung>",
   "issues": [
     {
-      "id": "<e.g. SEC-001>",
-      "category": "<security|performance|codeQuality|bestPractices>",
+      "id": "<KATEGORIE-NR z.B. SEC-001>",
       "severity": "<critical|high|medium|low>",
-      "title": "<short title in German>",
-      "description": "<explanation in German, 1-2 sentences>",
-      "lineHint": "<relevant code snippet, max 60 chars>",
-      "suggestion": "<concrete fix recommendation in German>"
+      "category": "<security|performance|codeQuality|general>",
+      "title": "<kurzer Titel>",
+      "description": "<Was ist das Problem?>",
+      "line": <Zeilennummer oder null>,
+      "suggestion": "<Konkrete Verbesserung>"
     }
   ],
-  "optimizedCode": "<the full improved version of the code with all issues fixed, as a string>"
+  "optimizedCode": "<vollständiger optimierter Code als String, alle \\n escaped>"
 }
 
-Rules:
-- Return ONLY valid JSON, no markdown, no backticks, no preamble
-- issues array must be sorted: critical first, then high, medium, low
-- optimizedCode must be the actual fixed code, not a placeholder
-- Be specific — reference actual variable names, line patterns from the code
-- Max 10 issues total, only report real problems
-- If code is clean, return empty issues array and high score
-- All text fields (title, description, suggestion) must be in German
+Regeln:
+- Maximal 10 Issues
+- Priorisiere echte Probleme, keine False Positives
+- optimizedCode soll den originalen Code mit allen Fixes angewendet enthalten
+- Antworte auf Deutsch`;
 
-Code to review (${language}):
-\`\`\`${language}
-${code.slice(0, 6000)}
-\`\`\``;
-}
-
-// ===============================================
-// Route Handler
-// ===============================================
 export async function POST(req: NextRequest) {
-  // Rate limiting
-  const key = getRateLimitKey(req);
-  const { allowed, remaining } = checkRateLimit(key);
+  // Get IP for rate limiting
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+
+  const { allowed, remaining } = getRateLimit(ip);
 
   if (!allowed) {
     return NextResponse.json(
@@ -130,51 +71,92 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Parse body
-  let body: { code: string; language: string };
+  let body: { code?: string; language?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Ungültiger Request Body" }, { status: 400 });
+    return NextResponse.json({ error: "Ungültiger Request Body." }, { status: 400 });
   }
 
-  const { code, language } = body;
+  const { code, language = "javascript" } = body;
 
   if (!code || typeof code !== "string" || code.trim().length < 10) {
-    return NextResponse.json({ error: "Kein Code übergeben" }, { status: 400 });
+    return NextResponse.json({ error: "Kein oder zu kurzer Code übergeben." }, { status: 400 });
   }
 
-  if (!["javascript", "typescript", "python", "go"].includes(language)) {
-    return NextResponse.json({ error: "Sprache nicht unterstützt" }, { status: 400 });
-  }
-
-  // Code length guard (protect token usage)
-  if (code.length > 8000) {
+  if (code.length > 50000) {
     return NextResponse.json(
-      { error: "Code zu lang. Bitte max. 8.000 Zeichen einreichen." },
-      { status: 413 }
+      { error: "Code zu lang. Maximal 50.000 Zeichen." },
+      { status: 400 }
     );
   }
 
-  // Call Gemini
-  try {
-    const raw = await callGemini(code, language);
-    const result = JSON.parse(raw);
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) {
+    return NextResponse.json({ error: "API nicht konfiguriert." }, { status: 500 });
+  }
 
-    return NextResponse.json(result, {
-      headers: {
-        "X-RateLimit-Remaining": String(remaining),
-      },
+  try {
+    const groqResponse = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          max_tokens: 4096,
+          temperature: 0.2,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: `Sprache: ${language}\n\nCode:\n\`\`\`${language}\n${code}\n\`\`\``,
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!groqResponse.ok) {
+      const err = await groqResponse.text();
+      console.error("Groq error:", err);
+      return NextResponse.json(
+        { error: "AI-Analyse fehlgeschlagen. Bitte erneut versuchen." },
+        { status: 502 }
+      );
+    }
+
+    const groqData = await groqResponse.json();
+    const rawContent = groqData.choices?.[0]?.message?.content ?? "";
+
+    // Strip potential markdown fences
+    const cleaned = rawContent
+      .replace(/^```(?:json)?\n?/i, "")
+      .replace(/\n?```$/i, "")
+      .trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      console.error("JSON parse failed:", cleaned.substring(0, 200));
+      return NextResponse.json(
+        { error: "Antwort konnte nicht verarbeitet werden. Bitte erneut versuchen." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(parsed, {
+      headers: { "X-RateLimit-Remaining": String(remaining) },
     });
-  } catch (err) {
-    console.error("Review error:", err);
+  } catch (error) {
+    console.error("Review route error:", error);
     return NextResponse.json(
-      { error: "Analyse fehlgeschlagen. Bitte erneut versuchen." },
+      { error: "Interner Fehler. Bitte erneut versuchen." },
       { status: 500 }
     );
   }
-}
-
-export async function GET() {
-  return NextResponse.json({ status: "ok", model: "gemini-2.0-flash" });
 }
