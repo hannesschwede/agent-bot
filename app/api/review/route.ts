@@ -97,26 +97,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Code zu lang. Maximal 50.000 Zeichen." }, { status: 400 });
   }
 
-  const VERCEL_AI_GATEWAY_KEY = process.env.VERCEL_AI_GATEWAY_KEY;
   const XAI_API_KEY = process.env.XAI_API_KEY;
 
-  if (!VERCEL_AI_GATEWAY_KEY || !XAI_API_KEY) {
+  if (!XAI_API_KEY) {
     return NextResponse.json({ error: "API nicht konfiguriert." }, { status: 500 });
   }
 
   try {
     const response = await fetch(
-      "https://ai-gateway.vercel.sh/v1/chat/completions",
+      "https://api.x.ai/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${VERCEL_AI_GATEWAY_KEY}`,
-          "x-ai-provider-key": XAI_API_KEY,
-          "x-ai-provider": "xai",
+          Authorization: `Bearer ${XAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "grok-3-mini",
+          model: "grok-3-mini-beta",
           max_tokens: 4096,
           temperature: 0.2,
           messages: [
@@ -132,7 +129,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const err = await response.text();
-      console.error("Vercel AI Gateway error:", response.status, err);
+      console.error("xAI API error:", response.status, err);
       return NextResponse.json(
         { error: "AI-Analyse fehlgeschlagen. Bitte erneut versuchen." },
         { status: 502 }
