@@ -91,22 +91,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-  if (!GROQ_API_KEY) {
+  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+  if (!GITHUB_TOKEN) {
     return NextResponse.json({ error: "API nicht konfiguriert." }, { status: 500 });
   }
 
   try {
     const groqResponse = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
+      "https://models.inference.ai.azure.com/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${GROQ_API_KEY}`,
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
         },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          model: "meta-llama-3.3-70b-instruct",
           max_tokens: 4096,
           temperature: 0.2,
           messages: [
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     if (!groqResponse.ok) {
       const err = await groqResponse.text();
-      console.error("Groq error:", err);
+      console.error("GitHub Models error:", groqResponse.status, err);
       return NextResponse.json(
         { error: "AI-Analyse fehlgeschlagen. Bitte erneut versuchen." },
         { status: 502 }
