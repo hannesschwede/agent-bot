@@ -5,7 +5,17 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        accent: "#FF4F15",
+        dark: "#182332",
+        surface: "#0D1117",
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
+      },
+    },
   },
   plugins: [],
 };

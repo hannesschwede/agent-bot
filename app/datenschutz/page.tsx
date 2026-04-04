@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+
 export const metadata: Metadata = { title: "Datenschutzerklärung | Agent Bot" };
+
 export default function DatenschutzPage() {
   return (
     <div className="min-h-screen bg-white text-black font-sans">
-      <nav className="sticky top-0 z-50 w-full border-b border-black/10 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" className="flex items-center gap-3 hover:opacity-70 transition-opacity"><div className="h-7 w-7 bg-[#FF4F15]" /><span className="text-[12px] font-bold tracking-[0.2em] uppercase">Agent Bot</span></a>
-        </div>
-      </nav>
+      <Navbar />
       <main className="mx-auto max-w-3xl px-6 py-16 md:py-24">
         <h1 className="text-3xl font-black uppercase mb-8">Datenschutzerklärung</h1>
         <div className="space-y-8 text-sm leading-relaxed text-black/80">
-          <section><h2 className="font-bold text-black mb-2">1. Verantwortlicher</h2><p>Verantwortlicher für die Datenverarbeitung auf dieser Website ist:</p><p className="mt-2">Hannes Schwede<br />Sömmeringstraße 15<br />50823 Köln<br />E-Mail: <a href="mailto:hannes@agent-bot.de" className="text-[#FF4F15] hover:underline">hannes@agent-bot.de</a></p></section>
+          <section><h2 className="font-bold text-black mb-2">1. Verantwortlicher</h2><p>Verantwortlicher für die Datenverarbeitung auf dieser Website ist:</p><p className="mt-2">Hannes Schwede<br />Sömmeringstraße 15<br />50823 Köln<br />E-Mail: <a href="mailto:hannes@agent-bot.de" className="text-accent hover:underline">hannes@agent-bot.de</a></p></section>
           <section><h2 className="font-bold text-black mb-2">2. Allgemeine Hinweise zur Datenverarbeitung</h2><p>Wir verarbeiten personenbezogene Daten nur, soweit dies zur Bereitstellung einer funktionsfähigen Website, unserer Inhalte und Leistungen sowie zur Kommunikation mit Ihnen erforderlich ist. Die Verarbeitung erfolgt auf Grundlage der DSGVO und des BDSG.</p></section>
           <section><h2 className="font-bold text-black mb-2">3. Hosting und Server-Logfiles</h2><p>Diese Website wird bei Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA gehostet. Beim Aufruf unserer Website werden durch den Hosting-Anbieter automatisch Informationen in sogenannten Server-Logfiles erhoben (z.B. IP-Adresse, Datum und Uhrzeit des Abrufs, Browsertyp, Betriebssystem, Referrer-URL). Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der technischen Bereitstellung und Sicherheit der Website).</p><p className="mt-2">Da Vercel seinen Sitz in den USA hat, können Daten in die USA übertragen werden. Vercel nimmt am EU-U.S. Data Privacy Framework teil.</p></section>
           <section><h2 className="font-bold text-black mb-2">4. Kontaktaufnahme per E-Mail</h2><p>Wenn Sie uns per E-Mail kontaktieren, werden Ihre Angaben (E-Mail-Adresse, Inhalt der Nachricht und ggf. weitere von Ihnen übermittelte Daten) zur Bearbeitung der Anfrage verarbeitet. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, soweit es um vorvertragliche oder vertragliche Anfragen geht, im Übrigen Art. 6 Abs. 1 lit. f DSGVO.</p></section>
@@ -23,14 +23,7 @@ export default function DatenschutzPage() {
           <section><h2 className="font-bold text-black mb-2">10. Änderungen dieser Datenschutzerklärung</h2><p>Wir behalten uns vor, diese Datenschutzerklärung künftig zu ändern, damit sie stets den aktuellen rechtlichen Anforderungen entspricht. Für Ihren erneuten Besuch gilt dann die jeweils aktuelle Version.</p></section>
         </div>
       </main>
-      <footer className="border-t border-black/10 px-6 py-8 text-center">
-        <p className="text-[11px] text-black/30 mb-2">© 2026 Agent Bot · Hannes Schwede</p>
-        <div className="flex justify-center gap-4 text-[11px] text-black/30">
-          <a href="/impressum" className="hover:text-[#FF4F15] transition-colors">Impressum</a>
-          <a href="/datenschutz" className="hover:text-[#FF4F15] transition-colors">Datenschutz</a>
-          <a href="https://www.linkedin.com/in/schwedehannes/" target="_blank" rel="noopener noreferrer" className="hover:text-[#FF4F15] transition-colors">LinkedIn</a>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

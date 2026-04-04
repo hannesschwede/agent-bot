@@ -6,7 +6,7 @@ html { scroll-behavior: smooth; }
 
 :root {
   --grid: rgba(0,0,0,.12);
-  --accent: #ff4d00;
+  --accent: #FF4F15;
 }
 
 body { background: #fff; color: #000; }

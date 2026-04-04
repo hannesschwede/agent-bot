@@ -87,7 +87,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ungültiger Request Body." }, { status: 400 });
   }
 
-  const { code, language = "javascript" } = body;
+  const { code, language: rawLang = "javascript" } = body;
+
+  const ALLOWED_LANGUAGES = ["javascript", "typescript", "python", "go"];
+  const language = ALLOWED_LANGUAGES.includes(rawLang as string)
+    ? rawLang
+    : "javascript";
 
   if (!code || typeof code !== "string" || code.trim().length < 10) {
     return NextResponse.json({ error: "Kein oder zu kurzer Code übergeben." }, { status: 400 });
@@ -104,9 +109,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
     const response = await fetch(
       "https://api.x.ai/v1/chat/completions",
       {
+        signal: controller.signal,
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -126,6 +135,8 @@ export async function POST(req: NextRequest) {
         }),
       }
     );
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const err = await response.text();
