@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BEEHIIV_API_KEY = process.env.BEEHIIV_API_KEY!;
-const BEEHIIV_PUB_ID = process.env.BEEHIIV_PUB_ID!;
-
 export async function POST(req: NextRequest) {
   try {
+    const BEEHIIV_API_KEY = process.env.BEEHIIV_API_KEY;
+    const BEEHIIV_PUB_ID = process.env.BEEHIIV_PUB_ID;
+
+    if (!BEEHIIV_API_KEY || !BEEHIIV_PUB_ID) {
+      return NextResponse.json(
+        { error: "Newsletter-API nicht konfiguriert." },
+        { status: 500 }
+      );
+    }
+
     const { email, utm_medium } = await req.json();
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (
+      !email ||
+      typeof email !== "string" ||
+      email.length > 320 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
       return NextResponse.json({ error: "Ungültige E-Mail-Adresse." }, { status: 400 });
     }
 

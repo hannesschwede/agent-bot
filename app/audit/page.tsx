@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
   title: "Lead-Performance Audit | Agent Bot",
@@ -8,6 +10,9 @@ export const metadata: Metadata = {
     url: "https://agent-bot.de/audit",
     title: "Lead-Performance Audit | Agent Bot",
     description: "Hör auf zu raten. Fang an zu konvertieren. Kostenloser Website-Check für KMUs.",
+  },
+  alternates: {
+    canonical: "https://agent-bot.de/audit",
   },
 };
 
@@ -20,12 +25,7 @@ const FEATURES = [
 export default function AuditPage() {
   return (
     <div className="min-h-screen bg-white text-black font-sans">
-      <nav className="sticky top-0 z-50 w-full border-b border-black/10 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" className="flex items-center gap-3 hover:opacity-70 transition-opacity"><div className="h-7 w-7 bg-[#FF4F15]" /><span className="text-[12px] font-bold tracking-[0.2em] uppercase">Agent Bot</span></a>
-          <a href="https://stunning-engine-8fm2wcihxrjsnffkabftyj.streamlit.app/" target="_blank" rel="noopener noreferrer" className="bg-[#FF4F15] text-white px-4 py-2 text-[11px] font-bold uppercase tracking-[0.15em] hover:bg-[#182332] transition-colors">Audit starten</a>
-        </div>
-      </nav>
+      <Navbar cta={{ href: "https://stunning-engine-8fm2wcihxrjsnffkabftyj.streamlit.app/", label: "Audit starten" }} />
       <header className="bg-[#182332] text-white">
         <div className="mx-auto max-w-6xl px-6 py-20 md:py-32">
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-[#FF4F15] mb-6">Kostenloses Tool</p>
@@ -94,14 +94,7 @@ export default function AuditPage() {
           <a href="https://stunning-engine-8fm2wcihxrjsnffkabftyj.streamlit.app/" target="_blank" rel="noopener noreferrer" className="inline-block bg-[#182332] text-white px-8 py-4 text-sm font-bold uppercase tracking-[0.15em] hover:bg-[#FF4F15] transition-colors">Audit starten</a>
         </div>
       </section>
-      <footer className="border-t border-black/10 px-6 py-8 text-center">
-        <p className="text-[11px] text-black/30 mb-2">© 2026 Agent Bot · Hannes Schwede</p>
-        <div className="flex justify-center gap-4 text-[11px] text-black/30">
-          <a href="/impressum" className="hover:text-[#FF4F15] transition-colors">Impressum</a>
-          <a href="/datenschutz" className="hover:text-[#FF4F15] transition-colors">Datenschutz</a>
-          <a href="https://www.linkedin.com/in/schwedehannes/" target="_blank" rel="noopener noreferrer" className="hover:text-[#FF4F15] transition-colors">LinkedIn</a>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
