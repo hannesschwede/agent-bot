@@ -6,13 +6,13 @@ import PromptBuilder from "./PromptBuilder";
 export const metadata: Metadata = {
   title: "PromptForge — KI-Prompt-Generator | Agent Bot",
   description:
-    "Erstelle optimierte KI-Prompts mit Templates, Variablen und Best Practices. Kostenlos, ohne Anmeldung.",
+    "Erstelle model-optimierte KI-Prompts für Claude, GPT, Gemini. Kostenlos, ohne Anmeldung.",
   openGraph: {
     type: "website",
     url: "https://agent-bot.de/promptforge",
     title: "PromptForge — KI-Prompt-Generator | Agent Bot",
     description:
-      "Erstelle optimierte KI-Prompts mit Templates, Variablen und Best Practices.",
+      "Erstelle model-optimierte KI-Prompts für Claude, GPT, Gemini. Kostenlos.",
   },
   alternates: {
     canonical: "https://agent-bot.de/promptforge",
@@ -34,8 +34,8 @@ export default function PromptForgePage() {
             <span className="text-accent">FORGE.</span>
           </h1>
           <p className="max-w-lg text-lg text-white/60 leading-relaxed">
-            Erstelle optimierte KI-Prompts in Sekunden. Wähle ein Template,
-            fülle die Variablen aus, kopiere den fertigen Prompt.
+            Baue model-optimierte Prompts für Claude, GPT und Gemini.
+            Definiere Aufgabe, Rolle und Kontext — der Rest passiert automatisch.
           </p>
         </div>
       </header>

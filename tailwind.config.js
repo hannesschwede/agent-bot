@@ -12,8 +12,8 @@ export default {
         surface: "#0D1117",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "monospace"],
+        sans: ["'IBM Plex Sans'", "system-ui", "sans-serif"],
+        mono: ["'IBM Plex Mono'", "'JetBrains Mono'", "'Fira Code'", "monospace"],
       },
     },
   },
