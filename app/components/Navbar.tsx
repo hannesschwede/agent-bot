@@ -35,9 +35,9 @@ const SOCIAL_LINKS = [
 ];
 
 const PROJECTS = [
-  { href: "https://agent-bot.de", label: "agent-bot.de" },
-  { href: "https://neurocam.de", label: "neurocam.de" },
-  { href: "https://reststueck.de", label: "reststueck.de" },
+  { href: "https://agent-bot.de", label: "agent-bot.de", external: true },
+  { href: "/neurocam", label: "neurocam.de", external: false },
+  { href: "https://reststueck.de", label: "reststueck.de", external: true },
 ];
 
 const NAV_LINKS = [
@@ -106,18 +106,30 @@ export default function Navbar() {
             </button>
             {projectsOpen && (
               <div className="absolute top-full left-0 mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-glass dark:shadow-glass-dark overflow-hidden animate-[fade-in_0.15s_ease-out]">
-                {PROJECTS.map((project) => (
-                  <a
-                    key={project.href}
-                    href={project.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between px-4 py-3 text-[13px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
-                  >
-                    {project.label}
-                    <span className="text-[var(--muted-foreground)]">↗</span>
-                  </a>
-                ))}
+                {PROJECTS.map((project) =>
+                  project.external ? (
+                    <a
+                      key={project.href}
+                      href={project.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-4 py-3 text-[13px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+                    >
+                      {project.label}
+                      <span className="text-[var(--muted-foreground)]">↗</span>
+                    </a>
+                  ) : (
+                    <Link
+                      key={project.href}
+                      href={project.href}
+                      onClick={() => setProjectsOpen(false)}
+                      className="flex items-center justify-between px-4 py-3 text-[13px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+                    >
+                      {project.label}
+                      <span className="text-[var(--muted-foreground)]">→</span>
+                    </Link>
+                  )
+                )}
               </div>
             )}
           </div>
@@ -182,18 +194,30 @@ export default function Navbar() {
             <p className="px-3 text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-1">
               Projekte
             </p>
-            {PROJECTS.map((project) => (
-              <a
-                key={project.href}
-                href={project.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between px-3 py-2 text-[14px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded-lg hover:bg-[var(--muted)] transition-colors"
-              >
-                {project.label}
-                <span>↗</span>
-              </a>
-            ))}
+            {PROJECTS.map((project) =>
+              project.external ? (
+                <a
+                  key={project.href}
+                  href={project.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between px-3 py-2 text-[14px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded-lg hover:bg-[var(--muted)] transition-colors"
+                >
+                  {project.label}
+                  <span>↗</span>
+                </a>
+              ) : (
+                <Link
+                  key={project.href}
+                  href={project.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-between px-3 py-2 text-[14px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded-lg hover:bg-[var(--muted)] transition-colors"
+                >
+                  {project.label}
+                  <span>→</span>
+                </Link>
+              )
+            )}
           </div>
           <div className="pt-2 flex items-center gap-1 px-3">
             {SOCIAL_LINKS.map((link) => (
