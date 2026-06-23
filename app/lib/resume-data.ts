@@ -3,7 +3,7 @@ export const resumeData = {
     name: "Hannes Schwede",
     title: "Operations & Process Management",
     bio: "Seit 2023 operative Verantwortung in der Agenturwelt (GroupM, Mediascale) – Schwerpunkte: Steuerung sechsstelliger Monatsbudgets, Aufbau standardisierter Quality-Assurance-Prozesse und datengetriebene Optimierung. Seit 2025 Fokussierung auf eigene digitale Projekte im Bereich Automatisierung, Prozessarchitektur und Tool-Entwicklung. Verbindung von operativer Erfahrung mit technischem Handwerk (Python, TypeScript, Automatisierung). Ich suche eine Festanstellung im Operations- oder Process-Management – branchenoffen, praxisorientiert und ergebnisnah.",
-    email: "hannes@agent-bot.de",
+    email: "hannes.schwede@gmail.com",
     phone: "",
     location: "Köln, Deutschland",
     website: "https://agent-bot.de",
