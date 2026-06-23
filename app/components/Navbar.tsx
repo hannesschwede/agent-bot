@@ -36,7 +36,7 @@ const SOCIAL_LINKS = [
 
 const PROJECTS = [
   { href: "https://agent-bot.de", label: "agent-bot.de", external: true },
-  { href: "/neurocam", label: "neurocam.de", external: false },
+  { href: "https://neurocam.de", label: "neurocam.de", external: true },
   { href: "https://reststueck.de", label: "reststueck.de", external: true },
 ];
 
