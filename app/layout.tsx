@@ -35,7 +35,7 @@ export const metadata: Metadata = {
       "Lebenslauf von Hannes Schwede: Operations & Process Management, digitale Projekte, Automatisierung und Tool-Entwicklung.",
     images: ["https://agent-bot.de/og.jpg"],
   },
-  icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
+  icons: { icon: "/profile.jpeg", apple: "/profile.jpeg" },
 };
 
 export default function RootLayout({
