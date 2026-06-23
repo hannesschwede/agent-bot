@@ -10,17 +10,17 @@ export const metadata: Metadata = {
   description:
     "KI-CAM-Simulator: CNC-Parameter vor dem ersten Span validieren. Feeds & Speeds prüfen, Kollisionen erkennen und G-Code sicher exportieren.",
   alternates: {
-    canonical: "https://agent-bot.de/neurocam",
+    canonical: "https://hannesschwede.com/neurocam",
   },
   openGraph: {
     type: "website",
-    url: "https://agent-bot.de/neurocam",
+    url: "https://hannesschwede.com/neurocam",
     title: "Neurocam — KI-CAM-Simulator",
     description:
       "KI-CAM-Simulator: CNC-Parameter vor dem ersten Span validieren. Feeds & Speeds prüfen, Kollisionen erkennen und G-Code sicher exportieren.",
     images: [
       {
-        url: "https://agent-bot.de/og.jpg",
+        url: "https://hannesschwede.com/og.jpg",
         width: 1200,
         height: 630,
         alt: "Neurocam — KI-CAM-Simulator",
