@@ -23,20 +23,6 @@ const nextConfig = {
       },
     ];
   },
-  async redirects() {
-    return [
-      {
-        source: "/tools/code-reviewer",
-        destination: "/code-review",
-        permanent: true,
-      },
-      {
-        source: "/tools/code-reviewer/:path*",
-        destination: "/code-review",
-        permanent: true,
-      },
-    ];
-  },
 };
 
 export default nextConfig;
